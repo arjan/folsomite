@@ -13,6 +13,11 @@
 -module(folsomite).
 -export([start/0, finalize/0]).
 
+-export(
+    [ inc_counter/1
+    , inc_counter/2
+    ]).
+
 %% api
 start() -> start(folsomite).
 finalize() -> folsomite_server:finalize().
@@ -26,3 +31,16 @@ start_ok(App, {error, {not_started, Dep}}) ->
     start(App);
 start_ok(App, {error, Reason}) ->
     erlang:error({app_start_failed, App, Reason}).
+
+inc_counter(Metric) ->
+    inc_counter(Metric, 1).
+
+inc_counter(Metric, Count) ->
+    MetricExists = folsom_metrics:metric_exists(Metric),
+    inc_counter(Metric, Count, MetricExists).
+
+inc_counter(Metric, Count, true) ->
+    folsom_metrics:notify(Metric, {inc, Count});
+inc_counter(Metric, Count, false) ->
+    folsom_metrics:new_counter(Metric),
+    inc_counter(Metric, Count, true).
